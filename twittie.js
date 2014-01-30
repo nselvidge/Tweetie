@@ -83,7 +83,7 @@
         var that = this;
 
         // Fetch tweets
-        $.getJSON('http://files.sonnyt.com/tweetie/tweet.php', { username: settings.username, count: settings.count, exclude_replies: settings.hideReplies }, function (twt) {
+        $.getJSON('api/tweet.php', { username: settings.username, count: settings.count, exclude_replies: settings.hideReplies }, function (twt) {
             that.find('span').fadeOut('fast', function () {
                 that.html('<ul></ul>');
 
@@ -93,7 +93,7 @@
                             date: dating(twt[i].created_at),
                             tweet: linking(twt[i].text),
                             avatar: '<img src="'+ twt[i].user.profile_image_url +'" />',
-                            url: 'http://twitter.com/' + twit[i].user.screen_name + '/status/' + twit[i].id_str,
+                            url: 'http://twitter.com/' + twt[i].user.screen_name + '/status/' + twt[i].id_str,
                             retweeted: twt[i].retweeted
                         };
 
