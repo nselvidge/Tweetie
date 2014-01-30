@@ -5,9 +5,10 @@
 
 (function ($) {
 
-    $.fn.twittie = function (options) {
+    $.fn.twittie = function (options, callback) {
         // Default settings
         var settings = $.extend({
+            'username': null,
             'count': 10,
             'hideReplies': false,
             'dateFormat': '%b/%d/%Y',
@@ -18,34 +19,15 @@
          * Applies @reply, #hash and http links
          * @param  {String} tweet A single tweet
          * @return {String}       Fixed tweet
+         *
+         * Thanks to @Wachem enhanced linking.
          */
         var linking = function (tweet) {
-            var parts = tweet.split(' ');
-            var twit = '';
+            tweet.replace(/(https?:\/\/([-\w\.]+)+(:\d+)?(\/([\w\/_\.]*(\?\S+)?)?)?)/ig,'<a href="$1" target="_blank" title="Visit this link">$1</a>')
+                 .replace(/#([a-zA-Z0-9]+)/g,'<a href="http://twitter.com/search?q=%23$1&amp;src=hash" target="_blank" title="Search for #$1">#$1</a>')
+                 .replace(/@([a-zA-Z0-9]+)/g,'<a href="http://twitter.com/$1" target="_blank" title="$1 on Twitter">@$1</a>');
 
-            for (var i = 0, len = parts.length; i < len; i++) {
-                var text = parts[i];
-                var link = "https://twitter.com/#!/";
-
-                // Fix hashtag links
-                if (text.indexOf('#') !== -1) {
-                    text = '<a href="' + link + 'search/' + text.replace('#', '%23').replace(/[^A-Za-z0-9]/, '') + '" target="_blank">' + text + '</a>';
-                }
-
-                // Fix reply links
-                if (text.indexOf('@') !== -1) {
-                    text = '<a href="' + link + text.replace('@', '').replace(/[^A-Za-z0-9]/, '') + '" target="_blank">' + text + '</a>';
-                }
-
-                // Fix regular http links
-                if (text.indexOf('http://') !== -1) {
-                    text = '<a href="' + text + '" target="_blank">' + text + '</a>';
-                }
-
-                twit += text + ' ';
-            }
-
-            return twit;
+            return tweet;
         };
 
         /**
@@ -86,7 +68,7 @@
          */
         var templating = function (data) {
             var temp = settings.template;
-            var temp_variables = ['date', 'tweet', 'avatar'];
+            var temp_variables = ['date', 'tweet', 'avatar', 'url', 'retweeted'];
 
             for (var i = 0, len = temp_variables.length; i < len; i++) {
                 temp = temp.replace(new RegExp('{{' + temp_variables[i] + '}}', 'gi'), data[temp_variables[i]]);
@@ -101,7 +83,7 @@
         var that = this;
 
         // Fetch tweets
-        $.getJSON('http://files.sonnyt.com/tweetie/tweet.php', { count: settings.count, exclude_replies: settings.hideReplies }, function (twt) {
+        $.getJSON('http://files.sonnyt.com/tweetie/tweet.php', { username: settings.username, count: settings.count, exclude_replies: settings.hideReplies }, function (twt) {
             that.find('span').fadeOut('fast', function () {
                 that.html('<ul></ul>');
 
@@ -110,7 +92,9 @@
                         var temp_data = {
                             date: dating(twt[i].created_at),
                             tweet: linking(twt[i].text),
-                            avatar: '<img src="'+ twt[i].user.profile_image_url +'" />'
+                            avatar: '<img src="'+ twt[i].user.profile_image_url +'" />',
+                            url: 'http://twitter.com/' + twit[i].user.screen_name + '/status/' + twit[i].id_str,
+                            retweeted: twt[i].retweeted
                         };
 
                         that.find('ul').append('<li>' + templating(temp_data) + '</li>');
@@ -118,6 +102,8 @@
                         break;
                     }
                 }
+
+                if (typeof(callback) == 'function') callback();
             });
         });
     };
