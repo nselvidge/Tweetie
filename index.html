@@ -180,15 +180,16 @@
             dateFormat: '%b. %d, %Y',
             template: '<strong class="date">{{date}}</strong> - {{tweet}}',
             count: 10
+        }, function () {
+            console.log('loaded');
+            setInterval(function() {
+                var item = $('.example2 .tweet ul').find('li:first');
+
+                item.animate( {marginLeft: '-220px', 'opacity': '0'}, 500, function() {
+                    $(this).detach().appendTo('.example2 .tweet ul').removeAttr('style');
+                });
+            }, 5000);
         });
-
-        setInterval(function() {
-            var item = $('.example2 .tweet ul').find('li:first');
-
-            item.animate( {marginLeft: '-220px', 'opacity': '0'}, 500, function() {
-                $(this).detach().appendTo('.example2 .tweet ul').removeAttr('style');
-            });
-        }, 5000);
     </script>
 
     <a href="https://github.com/sonnyt/Tweetie" class="btn">Fork me</a>
