@@ -177,8 +177,10 @@
 
     <script class="source2" type="text/javascript">
         $('.example2 .tweet').twittie({
+            username: 'vincentdignan',
+            list: 'c-oo-l-e-s-t-nerds-i-know',
             dateFormat: '%b. %d, %Y',
-            template: '<strong class="date">{{date}}</strong> - {{tweet}}',
+            template: '<strong class="date">{{date}}</strong> - {{screen_name}} {{tweet}}',
             count: 10
         }, function () {
             setInterval(function() {

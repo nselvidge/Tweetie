@@ -4,19 +4,26 @@
  */
 
 (function ($) {
+    'use strict';
 
     $.fn.twittie = function () {
         var options = (arguments[0] instanceof Object) ? arguments[0] : {},
-            callback = (typeof(arguments[0]) == 'function') ? arguments[0] : arguments[1];
-            
+            callback = (typeof arguments[0] === 'function') ? arguments[0] : arguments[1];
+
         // Default settings
         var settings = $.extend({
             'username': null,
+            'list': null,
             'count': 10,
             'hideReplies': false,
             'dateFormat': '%b/%d/%Y',
-            'template': '{{date}} - {{tweet}}'
+            'template': '{{date}} - {{tweet}}',
+            'apiPath' : 'http://files.sonnyt.com/tweetie/tweet.php'
         }, options);
+
+        if (settings.list && !settings.username) {
+            $.error('If you want to fetch tweets from a list, you must define the username of the list owner.');
+        }
 
         /**
          * Applies @reply, #hash and http links
@@ -27,8 +34,8 @@
          */
         var linking = function (tweet) {
             var twit = tweet.replace(/(https?:\/\/([-\w\.]+)+(:\d+)?(\/([\w\/_\.]*(\?\S+)?)?)?)/ig,'<a href="$1" target="_blank" title="Visit this link">$1</a>')
-                 .replace(/#([a-zA-Z0-9]+)/g,'<a href="http://twitter.com/search?q=%23$1&amp;src=hash" target="_blank" title="Search for #$1">#$1</a>')
-                 .replace(/@([a-zA-Z0-9]+)/g,'<a href="http://twitter.com/$1" target="_blank" title="$1 on Twitter">@$1</a>');
+                 .replace(/#([a-zA-Z0-9_]+)/g,'<a href="http://twitter.com/search?q=%23$1&amp;src=hash" target="_blank" title="Search for #$1">#$1</a>')
+                 .replace(/@([a-zA-Z0-9_]+)/g,'<a href="http://twitter.com/$1" target="_blank" title="$1 on Twitter">@$1</a>');
 
             return twit;
         };
@@ -71,7 +78,7 @@
          */
         var templating = function (data) {
             var temp = settings.template;
-            var temp_variables = ['date', 'tweet', 'avatar', 'url', 'retweeted'];
+            var temp_variables = ['date', 'tweet', 'avatar', 'url', 'retweeted', 'screen_name'];
 
             for (var i = 0, len = temp_variables.length; i < len; i++) {
                 temp = temp.replace(new RegExp('{{' + temp_variables[i] + '}}', 'gi'), data[temp_variables[i]]);
@@ -86,7 +93,7 @@
         var that = this;
 
         // Fetch tweets
-        $.getJSON('http://files.sonnyt.com/tweetie/tweet.php', { username: settings.username, count: settings.count, exclude_replies: settings.hideReplies }, function (twt) {
+        $.getJSON(settings.apiPath, { username: settings.username, list: settings.list, count: settings.count, exclude_replies: settings.hideReplies }, function (twt) {
             that.find('span').fadeOut('fast', function () {
                 that.html('<ul></ul>');
 
@@ -94,10 +101,11 @@
                     if (twt[i]) {
                         var temp_data = {
                             date: dating(twt[i].created_at),
-                            tweet: linking(twt[i].text),
+                            tweet: (twt[i].retweeted) ? linking('RT @'+ twt[i].user.screen_name +': '+ twt[i].retweeted_status.text) : linking(twt[i].text),
                             avatar: '<img src="'+ twt[i].user.profile_image_url +'" />',
                             url: 'http://twitter.com/' + twt[i].user.screen_name + '/status/' + twt[i].id_str,
-                            retweeted: twt[i].retweeted
+                            retweeted: twt[i].retweeted,
+                            screen_name: linking('@'+ twt[i].user.screen_name),
                         };
 
                         that.find('ul').append('<li>' + templating(temp_data) + '</li>');
@@ -106,7 +114,7 @@
                     }
                 }
 
-                if (typeof(callback) == 'function') callback();
+                if (typeof callback === 'function') { callback(); }
             });
         });
     };
